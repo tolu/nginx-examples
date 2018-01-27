@@ -1,10 +1,15 @@
 # nginx-examples
 Explainer for nginx configuration with examples
 
+
 What follows is a bunch of code blocks with bits and pieces of nginx.conf complete with comments.
 Fully working examples can be found in the folders *proxy* / *cache* / *proxy-with-cache*.
 
 All examples can be run with `docker-compose` and build on the official nginx container.
+
+**Resources**
+ * [Nginx variables ref](http://nginx.org/en/docs/varindex.html)
+ * [Nginx official container](https://hub.docker.com/_/nginx/)
 
 ## `nginx.conf` explained
 
@@ -36,13 +41,13 @@ events {
 http {
     # create named log format
     log_format main '$remote_addr - $remote_user - [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
+                    '$status $body_bytes_sent "$http_referrer" '
                     '"$http_user_agent" "$http_x_forwarded_for"';
 
     # specify output for logs and named log format
     access_log /var/log/nginx/access.log main;
 
-    # print logs on standard out
-    access_log /dev/stdout main;
+    # to print logs directly to standard out use next line
+    # access_log /dev/stdout main;
 }
 ```
