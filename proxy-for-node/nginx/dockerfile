@@ -1,0 +1,9 @@
+FROM nginx
+
+# add some nice to have tools to the container
+RUN apt-get update
+RUN apt-get install iputils-ping -y
+RUN apt-get install nano -y
+
+# copy configs from this folder
+COPY etc /etc

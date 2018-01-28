@@ -1,0 +1,14 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "simple express that responds with request info and network stats",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tobias Lundin",
+  "license": "MIT",
+  "dependencies": {
+    "express": "*"
+  }
+}
