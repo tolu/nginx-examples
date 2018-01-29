@@ -3,13 +3,13 @@ Explainer for nginx configuration with examples
 
 - [nginx-examples](#nginx-examples)
     - [`nginx.conf` explained](#nginxconf-explained)
-        - [the basics](#the-basics)
-        - [events and http section](#events-and-http-section)
+        - [The basics](#the-basics)
+        - [Events and http section](#events-and-http-section)
         - [Creating virtual hosts with the `server` block directive](#creating-virtual-hosts-with-the-server-block-directive)
         - [The `location` block directive and serving files](#the-location-block-directive-and-serving-files)
         - [MIME types (multi-purpose internet mail extensions)](#mime-types-multi-purpose-internet-mail-extensions)
-        - [Reverse Proxy](#reverse-proxy)
-        - [HTTP Caching of proxy responses](#http-caching-of-proxy-responses)
+    - [Reverse Proxy](#reverse-proxy)
+    - [HTTP Caching of proxy responses](#http-caching-of-proxy-responses)
 
 > This repository was created as reference for myself to learn nginx while going through [nginx beginner to advanced](https://www.udemy.com/nginx-beginner-to-advanced)
 
@@ -26,7 +26,7 @@ All examples can be run with `docker-compose` and build on the official nginx co
 
 > nginx has a master process that reads the configuration and creates worker processes to handle all the action
 
-### the basics
+### The basics
 ```nginx
 # the user that runs the worker processes
 user nginx;
@@ -38,7 +38,7 @@ worker_processes auto;
 pid /var/run/nginx.pid
 ```
 
-### events and http section
+### Events and http section
 
 First off, `include <path to config>` can be used in all sections to import config from another file.
 
@@ -250,7 +250,7 @@ For any file that is not a part of that list, nginx sets the default `applicatio
 
 > `application/octet-stream` (in mime.types) is also used for files ending with [bin exe dll deb dmg iso img msi msp msm]
 
-### Reverse Proxy
+## Reverse Proxy
 
 The best feature of nginx!
 * hides the existence of original backend server
@@ -393,7 +393,7 @@ Other parameters that can be set on the server directive is
 [Full list of settings](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)
 
 
-### HTTP Caching of proxy responses
+## HTTP Caching of proxy responses
 
 * [Nginx caching guide](https://www.nginx.com/blog/nginx-caching-guide/)
 * [Nginx content caching](https://www.nginx.com/resources/admin-guide/content-caching/)
@@ -405,6 +405,26 @@ Also, nginx is amazingly fast at serving static files content from the local fil
 > Moreover, it supports the [sendfile](https://linux.die.net/man/2/sendfile) syscall to serve those files which is as fast as you can possibly get at serving files, since it's the OS kernel itself that's doing the job.
 
 **CACHING is only activated** when upstream server provides headers hints like Cache-Control!
+It does not cache responses with `Cache-Control` set to `Private,No-Cache` or `No-Store` or with `Set-Cookie` in the response header.
+
+`Cache-Control` from the origin CAN be ignore, like so
+```nginx
+location /images/ {
+    proxy_cache my_cache;
+    proxy_ignore_headers Cache-Control;
+    proxy_cache_valid any 30m;
+    # ...
+}
+```
+
+We need two directives to activate the cache, `proxy_cache_path` for configuration and `proxy_cache` (in a location block) to activate it.
+
+The `proxy_cache_path <path> [...settings]` directive define the following settings:
+ * `<path>` - local disc directory
+ * `levels=1:2` - sets up a 2 level directory hierarchy under `<path>`. As a large number of files can slow down file access.
+ * `keys_zone=one:8m` - sets up shared memory zone for cache keys and metadata of 8MB. A 1MB zone can store ~8000 keys.
+ * `max_size=10g` - sets upper limit of the cache. Optional. When the cache reach it's limit a process removes the files least recently used.
+ * `inactive=10m` - the time an asset can stay in the cache un-accessed. Regardless off if it has expired. Nginx does not automatically delete expired (as set by headers) assets, it simply refreshes it from the origin server when requested.
 
 Static file intercept
 ```nginx
@@ -413,7 +433,7 @@ http {
     # Enable cache and define local path for where to keep cached files
     # "levels=1:2"       set directory depth
     # "keys_zone=one:8m" name this cache "one" and set size of shared memory zone (8m) used for metadata
-    # "max_size=300m"    set total cache max size
+    # "max_size=300m"    set total cache max size to 300MB
     # "inactive=600m"    expire time for unused assets, defaults to 10m (minutes)
     proxy_cache_path  /var/cache/nginx levels=1:2 keys_zone=one:8m max_size=3000m inactive=600m;
     
@@ -427,15 +447,52 @@ http {
             proxy_cache one;
 
             # define the cache key
-            proxy_cache_key myCache$request_uri$scheme;
+            # i.e. the string to create a MD5 hash from
+            proxy_cache_key $scheme$proxy_host$request_uri; # <== default
 
             # turn off access logs for static files
             access_log off;
 
             # mark assets as immutable (can set specific time like "1h" instead)
             expires max;
+
+            # include cache status header with potential values:
+            # [HIT, MISS, BYPASS, EXPIRED, STALE, UPDATING, REVALIDATED]
+            add_header X-Cache-Status $upstream_cache_status;
         }
     }
 }
 
+```
+
+Delivering stale content when the origin server is down can be achieved with the `proxy_cache_use_stale` directive, like so `proxy_cache_use_stale [...reasons]`.
+
+For instance:
+```nginx
+location / {
+    # ...
+    proxy_cache_use_stale error timeout updating invalid_header http_500 http_502 http_503 http_504 http_404 http_403;
+}
+```
+There are also a bunch of directives that can be used to fine-tune the cache behaviour inside the `location` directive.
+
+ * `proxy_cache_revalidate on;` - use conditional GET (Last-Modified-Since) to origin server when refreshing assets to save bandwidth and time.
+ * `proxy_cache_min_uses {nr};` - nr of requests before storing asset in cache (defaults to 1).
+ * Setting `proxy_cache_use_stale updating;` in combination with `proxy_cache_background_update on;` instructs nginx to serve stale content when assets has expired and while it refreshes from the origin.
+ * Enabling `proxy_cache_lock on;` results in a cache MISS from multiple clients to only make one request to the origin server, letting the remaining requests wait and then serving from cache once the refresh completes.
+
+
+Defining when to bypass the cache ("*punching a hole in the cache*"):
+```nginx
+# define conditions when response will not be taken from cache
+proxy_cache_bypass $http_cache_control $http_authorization $cookie_nocache $arg_nocache $http_pragma;
+# bypasses cache if any provided argument is not empty and not equal to "0"
+# $arg_nocache => http://example.com/?nocache=true
+```
+
+Using stale cache while nginx updates from backing server:
+```nginx
+proxy_cache_background_update on;       # allow background fetch of expired asset
+proxy_cache_use_stale timeout updating; # use stale cache asset while updating
+proxy_cache_lock on;                    # allow only one request to populate the cache
 ```

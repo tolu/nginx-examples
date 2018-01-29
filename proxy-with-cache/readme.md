@@ -9,7 +9,7 @@ For the caching to kick in on the `nginx` side of things, we need to provide hea
 
 To see that the cache is working
  * monitor the output from node and make sure that not all requests also results in GET for js/css
- * check headers of js/css in chrome dev tool and look for `X-Proxy-Cache: HIT` (success)
+ * check headers of js/css in chrome dev tool and look for `X-Cache-Status: HIT` (success)
 
 ## Run
 
@@ -48,7 +48,7 @@ server {
 
   # enable cache for all requests ending with .js|.css|.ico
   location ~* \.(css|js|ico)$ {
-    # select cache
+    # select cache to use
     proxy_cache one;
     # add Cache-Control and Expires headers. 
     expires 2m;
