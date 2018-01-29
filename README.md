@@ -395,8 +395,9 @@ Other parameters that can be set on the server directive is
 
 ### HTTP Caching of proxy responses
 
-[Nginx caching guide](https://www.nginx.com/blog/nginx-caching-guide/)
-[USING NGINX TO AVOID NODE.JS LOAD](http://blog.argteam.com/coding/hardening-node-js-for-production-part-2-using-nginx-to-avoid-node-js-load/)
+* [Nginx caching guide](https://www.nginx.com/blog/nginx-caching-guide/)
+* [Nginx content caching](https://www.nginx.com/resources/admin-guide/content-caching/)
+* [USING NGINX TO AVOID NODE.JS LOAD](http://blog.argteam.com/coding/hardening-node-js-for-production-part-2-using-nginx-to-avoid-node-js-load/)
 
 Let nginx be your content cache (a server in between the client and the origin) and serve content without going to the backend server at all, especially good for offloading backend servers.
 Also, nginx is amazingly fast at serving static files content from the local file system, much more so that for instance nodejs.
