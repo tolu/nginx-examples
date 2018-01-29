@@ -1,0 +1,8 @@
+version: '3'
+services:
+  web:
+    build: ./nginx
+    ports:
+     - "8080:80"
+  nodebackend:
+    build: ./node

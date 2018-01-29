@@ -1,0 +1,12 @@
+FROM mhart/alpine-node
+
+WORKDIR /app
+COPY package.json package-lock.json index.js ./
+COPY public ./public
+COPY views ./views
+
+RUN npm install --production
+
+ENV PORT 80
+EXPOSE 80
+CMD ["node", "index.js"]
