@@ -1,6 +1,16 @@
 # nginx-examples
 Explainer for nginx configuration with examples
 
+- [nginx-examples](#nginx-examples)
+    - [`nginx.conf` explained](#nginxconf-explained)
+        - [the basics](#the-basics)
+        - [events and http section](#events-and-http-section)
+        - [Creating virtual hosts with the `server` block directive](#creating-virtual-hosts-with-the-server-block-directive)
+        - [The `location` block directive and serving files](#the-location-block-directive-and-serving-files)
+        - [MIME types (multi-purpose internet mail extensions)](#mime-types-multi-purpose-internet-mail-extensions)
+        - [Reverse Proxy](#reverse-proxy)
+        - [HTTP Caching of proxy responses](#http-caching-of-proxy-responses)
+
 > This repository was created as reference for myself to learn nginx while going through [nginx beginner to advanced](https://www.udemy.com/nginx-beginner-to-advanced)
 
 What follows is a bunch of code blocks with bits and pieces of `nginx.conf` complete with comments.
@@ -326,10 +336,11 @@ upstream backend {
     server localhost:3000;
     server localhost:5000;
 
-    # use keep-alive connections for backend, set to 10 minutes
-    # requires us to set the http version in the location block below
-    # works in a round robin fashion
-    keepalive 600;
+    # "keepalive <connections>"
+    # Activates cache for connections to upstream servers
+    # Sets the minimum nr of connections, more are created as needed
+    # Caching connections significantly increase performance (avoids handshakes)
+    keepalive 32;
 }
 
 server {
@@ -339,6 +350,8 @@ server {
     location / {
         # set http version to support keep-alive connections
         proxy_http_version 1.1;
+        # avoid closing connections to keep them in cache (keepalive in upstream block)
+        proxy_set_header Connection "";
 
         proxy_pass http://backend;
     }
@@ -389,3 +402,39 @@ Let nginx be your content cache (a server in between the client and the origin) 
 Also, nginx is amazingly fast at serving static files content from the local file system, much more so that for instance nodejs.
 
 > Moreover, it supports the [sendfile](https://linux.die.net/man/2/sendfile) syscall to serve those files which is as fast as you can possibly get at serving files, since it's the OS kernel itself that's doing the job.
+
+**CACHING is only activated** when upstream server provides headers hints like Cache-Control!
+
+Static file intercept
+```nginx
+
+http {
+    # Enable cache and define local path for where to keep cached files
+    # "levels=1:2"       set directory depth
+    # "keys_zone=one:8m" name this cache "one" and set size of shared memory zone (8m) used for metadata
+    # "max_size=300m"    set total cache max size
+    # "inactive=600m"    expire time for unused assets, defaults to 10m (minutes)
+    proxy_cache_path  /var/cache/nginx levels=1:2 keys_zone=one:8m max_size=3000m inactive=600m;
+    
+    # cached files are first written to temporary location, define where here
+    proxy_temp_path /var/tmp;
+
+    server {
+
+        location ~* \.(css|js|map)$ {
+            # select cache to use
+            proxy_cache one;
+
+            # define the cache key
+            proxy_cache_key myCache$request_uri$scheme;
+
+            # turn off access logs for static files
+            access_log off;
+
+            # mark assets as immutable (can set specific time like "1h" instead)
+            expires max;
+        }
+    }
+}
+
+```
