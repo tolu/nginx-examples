@@ -37,8 +37,8 @@ All examples can be run with a simple [`docker-compose up`](https://docs.docker.
 ### The basics
 
 Nginx consists of `modules` which are controller by `directives` in the config file.
-There are `simple` and `block` *directives*.
-A simple directive consists of the name and parameters separated by spaces and end with a **semicolon** (`;`).
+There are `simple` and `block` *directives*.  
+A simple directive consists of the name and parameters separated by spaces and end with a **semicolon** (`;`).  
 A block directive on the other hand has the same structure but ends with a set of instructions surrounded by **braces** (`{}`).
 
 If a block directive can have other directives inside the braces it is called a `context`.
@@ -67,7 +67,7 @@ http {
 
 ```
 
-The `main` context
+Basic settings in the `main` context
 ```nginx
 # set the user that runs the worker processes
 user nginx;
@@ -83,13 +83,19 @@ pid /var/run/nginx.pid
 
 First off, `include <path to config>` can be used in all sections to import config from another file.
 
-> To test that the `nginx.conf` is all right run `nginx -t` to test the configuration
+> To test that the `nginx.conf` is all right run `nginx -t` to test the configuration  
 > To reload nginx after you made changes to the config run `nginx -s reload`
 
 ```nginx
+# the events section should contain directives that affect connection processing
 events {
     # set max nr of connections for each worker
-    worker_connection 1024;
+    worker_connections 1024;
+    # accept_mutex on | off;
+    # debug_connection address | CIDR | unix:;
+    # multi_accept on | off;
+    # use <connection_processing_method>;
+    # ...
 }
 
 http {
