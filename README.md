@@ -308,9 +308,9 @@ The best feature of nginx!
 
 For instance
 ```
-          |———————|    |———————|
+          ┌───────┐    ┌───────┐
 Client => | NGINX | => | Node  |
-          |———————|    |———————|
+          └───────┘    └───────┘
 ```
 
 Basic example, with a single backend server using the `proxy_pass` directive
@@ -365,13 +365,13 @@ server {
 
 Scale your app with nginx and get high availability.
 ```
-                       |———————|
+                       ┌───────┐
                        | Node  |
-          |———————| => |———————|          
+          ┌───────┐ => └───────┘          
 Client => | NGINX |    
-          |———————| => |———————|
+          └───────┘ => ┌───────┐
                        | Node  |
-                       |———————|
+                       └───────┘
 ```
 
 Example
