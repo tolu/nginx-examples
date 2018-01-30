@@ -10,6 +10,10 @@ Explainer for nginx configuration with examples
         - [MIME types (multi-purpose internet mail extensions)](#mime-types-multi-purpose-internet-mail-extensions)
     - [Reverse Proxy](#reverse-proxy)
     - [HTTP Caching of proxy responses](#http-caching-of-proxy-responses)
+    - [Enable Gzip](#enable-gzip)
+    - [Enable SSL (HTTPS)](#enable-ssl-https)
+    - [Enable HTTP/2](#enable-http2)
+    - [Other resources](#other-resources)
 
 > This repository was created as reference for myself to learn nginx while going through [nginx beginner to advanced](https://www.udemy.com/nginx-beginner-to-advanced)
 
@@ -19,7 +23,7 @@ Fully working examples can be found in the folders
 * [*proxy-with-cache*](./proxy-with-cache)
 * [*proxy-with-cert*](./proxy-with-cert)
 
-All examples can be run with `docker-compose` and build on the official nginx container.
+All examples can be run with a simple [`docker-compose up`](https://docs.docker.com/compose/gettingstarted/) and build on the official [nginx container](https://hub.docker.com/_/nginx/).
 
 **Resources**
  * [Nginx variables ref](http://nginx.org/en/docs/varindex.html)
@@ -30,8 +34,41 @@ All examples can be run with `docker-compose` and build on the official nginx co
 > nginx has a master process that reads the configuration and creates worker processes to handle all the action
 
 ### The basics
+
+Nginx consists of `modules` which are controller by `directives` in the config file.
+There are `simple` and `block` *directives*.
+A simple directive consists of the name and parameters separated by spaces and end with a **semicolon** (`;`).
+A block directive on the other hand has the same structure but ends with a set of instructions surrounded by **braces** (`{}`).
+
+If a block directive can have other directives inside the braces it is called a `context`.
+
+Example
 ```nginx
-# the user that runs the worker processes
+# nginx.conf
+
+# line comments start with a "#"
+
+# a directive in the "main" context
+
+
+http {
+    # the http context...
+
+    server {
+        # the server context...
+
+        location {
+            # the location context...
+
+        }
+    }
+}
+
+```
+
+The `main` context
+```nginx
+# set the user that runs the worker processes
 user nginx;
 
 # set to number or auto = the number of cpu's available
@@ -499,3 +536,132 @@ proxy_cache_background_update on;       # allow background fetch of expired asse
 proxy_cache_use_stale timeout updating; # use stale cache asset while updating
 proxy_cache_lock on;                    # allow only one request to populate the cache
 ```
+
+## Enable Gzip
+
+**Why?**  
+Significantly reduces the size of transmitted data.
+
+**How?**  
+
+[Nginx: Compression and decompression](https://www.nginx.com/resources/admin-guide/compression-and-decompression/)
+
+```nginx
+# place directive in http, server or location context
+http {
+    gzip on;                                # enable compression, both static and dynamic content
+    gzip_types text/plain application/xml;  # list of mime types to compress, default is only "text/html"
+    gzip_min_length 1000;                   # set min length of content for using compression, default is 20 bytes
+    gzip_proxied no-cache no-store private; # use compression for proxied responses if Cache-Control is "no-cache", "no-store" or "private".
+                                            # Set to "any" to enable for all responses
+
+    gzip_comp_level 6;                      # set compression level [1-9]
+    gzip_http_version 1.1;                  # set min http version for using gzip
+    gzip_vary on;                           # enable inserting the "Vary: Accept-Encoding" header
+
+    server {
+        location / {
+            # to send a compressed version of a file, enable:
+            gzip_static on;
+            # note that this does not enable on-the-fly compression, this simply tries to send <path/file>.gz
+        }
+    }
+}
+```
+
+There is also an embedded variable that can be added to the headers to get a glimpse of how efficient the compression is:
+```nginx
+server {
+    location / {
+        add_header X-Gzip-Status $gzip_ratio;
+    }
+}
+```
+
+## Enable SSL (HTTPS)
+
+Resources
+
+ * [Why HTTPS Matters (Google Web Fundamentals)](https://developers.google.com/web/fundamentals/security/encrypt-in-transit/why-https)
+ * [Enabling](https://developers.google.com/web/fundamentals/security/encrypt-in-transit/enable-https)
+ * [Blog: Securing Nginx with HTTPS](https://bjornjohansen.no/securing-nginx-ssl)
+ * [Blog: Optimizing HTTPS on Nginx](https://bjornjohansen.no/optimizing-https-nginx)
+ * [Blog: Redirect HTTP to HTTPS with Nginx](https://bjornjohansen.no/redirect-to-https-with-nginx)
+ * [Blog: Let's Encrypt for Nginx](https://bjornjohansen.no/letsencrypt-nginx)
+
+**Why?**  
+
+ * Prerequisite for HTTP/2! Thats why!
+ * Integrity and security
+ * Requirement for [service workers](https://developers.google.com/web/fundamentals/primers/service-workers/)
+
+**How?**  
+
+Get a certificate from [letsencrypt](https://letsencrypt.org/)
+
+Or go through this guide: [free-certificates-lets-encrypt-and-nginx](https://www.nginx.com/blog/free-certificates-lets-encrypt-and-nginx/)
+
+If you have a `*.pfx` certificate, [see this gist](https://gist.github.com/ericharth/8334664) ([original article here](http://www.markbrilman.nl/2011/08/howto-convert-a-pfx-to-a-seperate-key-crt-file/)) for how you can convert that to a `pem` file.
+
+Example
+```nginx
+
+http {
+
+    ##
+    # SSL Settings (can be paced in http or server contexts)
+    ##
+
+    ssl_certificate     /path/to/cert.crt;
+    ssl_certificate_key /path/to/cert.key;
+
+    server {
+        # enable ssl on listening sockets
+        listen 443 ssl default_server;
+        server_name _;
+
+        location / {
+            # ...
+        }    
+    }
+}
+
+```
+
+More info and optimization tips can be found in [Nginx: Configuring HTTPS servers](http://nginx.org/en/docs/http/configuring_https_servers.html)
+
+## Enable HTTP/2
+
+Resources
+
+* [Blog: Enable H2 on Nginx](https://bjornjohansen.no/enable-http2-on-nginx)
+
+> note that the SPDY module have been replaced with the HTTP/2 module in Nginx
+
+**Why?**
+HTTP/2 is binary (the native computer language), instead of textual which makes it easier to parse, more compact and less error-prone.
+HTTP/2 is fully multiplexed, i.e. can send multiple requests for data in parallel over a single TCP connection.
+Support for **server push**, i.e. additional resources can be pushed to the client for future use.
+Uses header (HPACK) compression which reduces overhead.
+
+**How!**
+```nginx
+
+# make sure to enable SSL first
+# as this is a requirement for H2
+
+server {
+    # just add these lines to the listen directive
+    listen 443 ssl http2;
+}
+
+```
+
+## Other resources
+
+ * [Nginx Complete Cookbook](https://www.nginx.com/resources/library/complete-nginx-cookbook/)
+ * [Nginx/Slidedeck: Basics and Best Practices](https://www.slideshare.net/Nginx/nginx-basics-and-best-practices) from 2017-05-26
+ * [Nginx: Pitfalls and common mistakes](https://www.nginx.com/resources/wiki/start/topics/tutorials/config_pitfalls/)
+ * [Github/h5bp: Nginx HTTP server boilerplate configs](https://github.com/h5bp/server-configs-nginx)
+ * [Gist: Tuning Nginx for performance](https://gist.github.com/denji/8359866)
+ * [Blog: Nginx redirects](https://bjornjohansen.no/nginx-redirect)
