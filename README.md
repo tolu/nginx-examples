@@ -21,7 +21,8 @@ What follows is a bunch of code blocks with bits and pieces of `nginx.conf` comp
 Fully working examples can be found in the folders 
 * [*proxy-for-node*](./proxy-for-node)
 * [*proxy-with-cache*](./proxy-with-cache)
-* [*proxy-with-cert*](./proxy-with-cert)
+* [*proxy-with-ssl*](./proxy-with-ssl)  (TODO!)
+* [*proxy-with-cache-ssl-gzip-h2*](./proxy-with-cache-ssl-gzip-h2) (TODO!)
 
 All examples can be run with a simple [`docker-compose up`](https://docs.docker.com/compose/gettingstarted/) and build on the official [nginx container](https://hub.docker.com/_/nginx/).
 
