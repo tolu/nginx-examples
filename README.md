@@ -14,7 +14,10 @@ Explainer for nginx configuration with examples
 > This repository was created as reference for myself to learn nginx while going through [nginx beginner to advanced](https://www.udemy.com/nginx-beginner-to-advanced)
 
 What follows is a bunch of code blocks with bits and pieces of `nginx.conf` complete with comments.
-Fully working examples can be found in the folders *proxy* / *cache* / *proxy-with-cache*.
+Fully working examples can be found in the folders 
+* [*proxy-for-node*](./proxy-for-node)
+* [*proxy-with-cache*](./proxy-with-cache)
+* [*proxy-with-cert*](./proxy-with-cert)
 
 All examples can be run with `docker-compose` and build on the official nginx container.
 
