@@ -595,6 +595,7 @@ Resources
  * [Blog: Optimizing HTTPS on Nginx](https://bjornjohansen.no/optimizing-https-nginx)
  * [Blog: Redirect HTTP to HTTPS with Nginx](https://bjornjohansen.no/redirect-to-https-with-nginx)
  * [Blog: Let's Encrypt for Nginx](https://bjornjohansen.no/letsencrypt-nginx)
+ * [Lets Encrypt on Nginx and Docker](http://blog.nbellocam.me/2016/03/10/letsencrypt-and-nginx-on-docker/)
 
 **Why?**  
 
@@ -604,11 +605,11 @@ Resources
 
 **How?**  
 
-Get a certificate from [letsencrypt](https://letsencrypt.org/)
+For production you would probably get a [let's encrypt](https://letsencrypt.org/) cert along these lines: [Lets Encrypt on Nginx and Docker](http://blog.nbellocam.me/2016/03/10/letsencrypt-and-nginx-on-docker/) / [Certbot for Nginx](https://certbot.eff.org/#debianstretch-nginx) / [free-certificates-lets-encrypt-and-nginx](https://www.nginx.com/blog/free-certificates-lets-encrypt-and-nginx/)
 
-Or go through this guide: [free-certificates-lets-encrypt-and-nginx](https://www.nginx.com/blog/free-certificates-lets-encrypt-and-nginx/)
+For this example here we'll just create a locally signed certificate.
 
-If you have a `*.pfx` certificate, [see this gist](https://gist.github.com/ericharth/8334664) ([original article here](http://www.markbrilman.nl/2011/08/howto-convert-a-pfx-to-a-seperate-key-crt-file/)) for how you can convert that to a `pem` file.
+> If you have a `*.pfx` certificate, [see this gist](https://gist.github.com/ericharth/8334664) ([original article here](http://www.markbrilman.nl/2011/08/howto-convert-a-pfx-to-a-seperate-key-crt-file/)) for how you can convert that to a `pem` file.
 
 Example
 ```nginx
