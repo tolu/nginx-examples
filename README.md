@@ -1,6 +1,8 @@
 # nginx-examples
 Explainer for nginx configuration with examples
 
+> If you need a primer on docker for windows, see [docker-for-windows-basics](https://github.com/tolu/markdown/blob/master/2018-01-docker-for-windows.md)
+
 - [nginx-examples](#nginx-examples)
     - [`nginx.conf` explained](#nginxconf-explained)
         - [The basics](#the-basics)
